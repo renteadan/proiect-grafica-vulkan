@@ -1,0 +1,23 @@
+{
+  "name": "vulkan-grafica",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "cube": "tsc cube/index.ts && node cube/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/renteadan/proiect-grafica-vulkan.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/renteadan/proiect-grafica-vulkan/issues"
+  },
+  "homepage": "https://github.com/renteadan/proiect-grafica-vulkan#readme",
+  "dependencies": {
+    "nvk": "^0.8.0"
+  }
+}

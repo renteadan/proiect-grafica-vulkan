@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "lib": ["es6", "dom"],
+    "moduleResolution": "node"
+  }
+}
