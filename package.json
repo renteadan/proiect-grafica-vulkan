@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "cube": "tsc cube/index.ts && node cube/index.js"
+    "cube": "tsc cube/index.ts & node cube/index.js",
+    "triangle": "tsc triangle/index.ts && node triangle/index.js",
+    "rotation": "tsc rotation/index.ts && node rotation/index.js"
   },
   "repository": {
     "type": "git",
