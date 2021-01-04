@@ -7,6 +7,7 @@ function start() {
         height: 320,
         title: "typescript-example"
     });
+    var instance = new nvk.VkInstance();
     var appInfo = new nvk.VkApplicationInfo({
         pApplicationName: "Hello!",
         applicationVersion: nvk.VK_MAKE_VERSION(1, 0, 0),
@@ -23,12 +24,18 @@ function start() {
     instanceInfo.ppEnabledLayerNames = validationLayers;
     instanceInfo.enabledExtensionCount = instanceExtensions.length;
     instanceInfo.ppEnabledExtensionNames = instanceExtensions;
-    var instance = new nvk.VkInstance();
     var result = nvk.vkCreateInstance(instanceInfo, null, instance);
     if (result !== nvk.VkResult.VK_SUCCESS)
         throw "Failed to create VkInstance!";
-    // setInterval(() => {
-    //   win.pollEvents();
-    // }, 1e3 / 60);
+    setInterval(function () {
+        win.pollEvents();
+    }, 1e3 / 60);
+    var amountOfLayers = { $: 0 };
+    nvk.vkEnumerateInstanceLayerProperties(amountOfLayers, null);
+    var layers = [];
+    for (var i = 0; i < amountOfLayers.$; i++) {
+        layers.push(new nvk.VkLayerProperties());
+    }
+    nvk.vkEnumerateInstanceLayerProperties(amountOfLayers, layers);
 }
 start();
