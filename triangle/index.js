@@ -1,6 +1,9 @@
+const { time } = require('console');
 const fs = require('fs');
 const nvk = require('nvk');
-const essentials = require('nvk-essentials')
+const essentials = require('nvk-essentials');
+const { VK_VIEWPORT_COORDINATE_SWIZZLE_NEGATIVE_W_NV } = require('nvk/generated/1.1.126/linux');
+const { vkCmdUpdateBuffer } = require('nvk/generated/1.1.126/win32');
 
 const {GLSL} = essentials;
 
@@ -34,6 +37,7 @@ function getShaderFile(path) {
 };
 
 function createShaderModule(shaderSrc, shaderModule) {
+  console.log(shaderSrc.byteLength)
   let shaderModuleInfo = new VkShaderModuleCreateInfo();
   shaderModuleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
   shaderModuleInfo.pCode = shaderSrc;
@@ -192,15 +196,6 @@ vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, queueFamilyCount, null)
 let queueFamilies = [...Array(queueFamilyCount.$)].map(() => new VkQueueFamilyProperties());
 vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, queueFamilyCount, queueFamilies);
 
-/*queueFamilies.map((queueFamily, index) => {
-  console.log(`Graphics Queue Family ${index}`);
-  console.log(`VK_QUEUE_GRAPHICS_BIT: ${(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) !== 0}`);
-  console.log(`VK_QUEUE_COMPUTE_BIT: ${(queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) !== 0}`);
-  console.log(`VK_QUEUE_TRANSFER_BIT: ${(queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) !== 0}`);
-  console.log(`VK_QUEUE_SPARSE_BINDING_BIT: ${(queueFamily.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) !== 0}`);
-  console.log(`Count: ${queueFamily.queueCount}`);
-  console.log(`TS valid bits: ${queueFamily.timestampValidBits}`);
-});*/
 
 let surfaceCapabilities = new VkSurfaceCapabilitiesKHR();
 vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, surfaceCapabilities);
@@ -503,37 +498,39 @@ cmdBufferBeginInfo.pInheritanceInfo = null;
 
 createVertexBuffer(vertexBuffer, vertexBufferMemory, vertices.byteLength);
 
-for (let ii = 0; ii < cmdBuffers.length; ++ii) {
-  let cmdBuffer = cmdBuffers[ii];
-  result = vkBeginCommandBuffer(cmdBuffer, cmdBufferBeginInfo);
-  ASSERT_VK_RESULT(result);
+function updateCmdBuffer(){
+  for (let ii = 0; ii < cmdBuffers.length; ++ii) {
+    let cmdBuffer = cmdBuffers[ii];
+    result = vkBeginCommandBuffer(cmdBuffer, cmdBufferBeginInfo);
+    ASSERT_VK_RESULT(result);
 
-  let clearValue = new VkClearValue();
+    let clearValue = new VkClearValue();
 
-  let renderPassBeginInfo = new VkRenderPassBeginInfo();
-  renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  renderPassBeginInfo.renderPass = renderPass;
-  renderPassBeginInfo.framebuffer = framebuffers[ii];
-  renderPassBeginInfo.renderArea.offset.x = 0;
-  renderPassBeginInfo.renderArea.offset.y = 0;
-  renderPassBeginInfo.renderArea.extent.width = win.width;
-  renderPassBeginInfo.renderArea.extent.height = win.height;
-  renderPassBeginInfo.clearValueCount = 1;
-  renderPassBeginInfo.pClearValues = [clearValue];
-  vkCmdBeginRenderPass(cmdBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    let renderPassBeginInfo = new VkRenderPassBeginInfo();
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = renderPass;
+    renderPassBeginInfo.framebuffer = framebuffers[ii];
+    renderPassBeginInfo.renderArea.offset.x = 0;
+    renderPassBeginInfo.renderArea.offset.y = 0;
+    renderPassBeginInfo.renderArea.extent.width = win.width;
+    renderPassBeginInfo.renderArea.extent.height = win.height;
+    renderPassBeginInfo.clearValueCount = 1;
+    renderPassBeginInfo.pClearValues = [clearValue];
+    vkCmdBeginRenderPass(cmdBuffer, renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-  vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-  vkCmdBindVertexBuffers(cmdBuffer, 0, 1, [vertexBuffer], new BigUint64Array([0n]));
+    vkCmdBindVertexBuffers(cmdBuffer, 0, 1, [vertexBuffer], new BigUint64Array([0n]));
 
-  vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
+    vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
 
-  vkCmdEndRenderPass(cmdBuffer);
+    vkCmdEndRenderPass(cmdBuffer);
 
-  result = vkEndCommandBuffer(cmdBuffer);
-  ASSERT_VK_RESULT(result);
-};
-
+    result = vkEndCommandBuffer(cmdBuffer);
+    ASSERT_VK_RESULT(result);
+  };
+}
+updateCmdBuffer()
 let semaphoreInfo = new VkSemaphoreCreateInfo();
 semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -541,6 +538,24 @@ result = vkCreateSemaphore(device, semaphoreInfo, null, semaphoreImageAvailable)
 ASSERT_VK_RESULT(result);
 result = vkCreateSemaphore(device, semaphoreInfo, null, semaphoreRenderingAvailable);
 ASSERT_VK_RESULT(result);
+
+var direction = 1
+function translate2D(offsets){
+  /*let vertices = new Float32Array([
+   0.0, -0.5,
+   0.5,  0.5,
+  -0.5,  0.5
+  ]);*/
+  if(vertices[2] >= 1 ){
+    direction = -1
+  }
+  if(vertices[4] <= -1){
+    direction = 1
+  }
+  vertices[0]=vertices[0]+(direction*offsets[0]);
+  vertices[2]=vertices[2]+(direction*offsets[0]);
+  vertices[4]=vertices[4]+(direction*offsets[0]);
+}
 
 function drawFrame() {
 
@@ -575,12 +590,15 @@ function drawFrame() {
 
   result = vkQueuePresentKHR(queue, presentInfo);
   ASSERT_VK_RESULT(result);
-
+  translate2D(new Float32Array([0.008,0.01]))
+  createVertexBuffer(vertexBuffer,vertexBufferMemory,vertices.byteLength)
+  updateCmdBuffer()
+  
 };
 
 console.log("drawing..");
 (function drawLoop() {
-  if (!win.shouldClose()) setTimeout(drawLoop, 0);
+  if (!win.shouldClose()) setTimeout(drawLoop);
   drawFrame();
   win.pollEvents();
 })();
