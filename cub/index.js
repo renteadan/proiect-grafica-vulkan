@@ -787,12 +787,12 @@ function updateTransforms() {
   for (let ii = 0; ii < vLightPosition.length; ++ii) ubo[48 + ii] = vLightPosition[ii];
   // model
   mat4.identity(mModel);
-  mat4.rotate(
+  /*mat4.rotate(
     mModel,
     mModel,
     (now / 1e3) * (90 * Math.PI / 180),
     vec3.fromValues(0.0, 0.0, 1.0)
-  );
+  );*/
   for (let ii = 0; ii < mModel.length; ++ii) ubo[0 + ii] = mModel[ii];
 
   // upload
