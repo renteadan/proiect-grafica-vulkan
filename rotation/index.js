@@ -830,7 +830,6 @@ function drawFrame() {
   presentInfo.pSwapchains = [swapchain];
   presentInfo.pImageIndices = new Uint32Array([imageIndex.$]);
   presentInfo.pResults = null;
-
   result = vkQueuePresentKHR(queue, presentInfo);
   if (result === VK_SUBOPTIMAL_KHR || result === VK_ERROR_OUT_OF_DATE_KHR) {
     if (!win.shouldClose()) win.onresize();

@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "cube": "node cube/index.js",
     "triangle": "node triangle/index.js",
+    "cube_test": "node cube_test/index.js",
     "rotation": "node rotation/index.js"
   },
   "repository": {
@@ -25,6 +26,7 @@
     "nvk-essentials": "^0.1.2",
     "nvk-struct-cache": "latest",
     "pngjs": "^3.3.3",
+    "quaternion": "^1.1.0",
     "tolw": "^0.1.2"
   },
   "devDependencies": {

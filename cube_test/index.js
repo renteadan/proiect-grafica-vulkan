@@ -2,22 +2,51 @@ const { time } = require('console');
 const fs = require('fs');
 const nvk = require('nvk');
 const essentials = require('nvk-essentials');
-
+const { vkCmdDrawIndexed, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN } = require('nvk/generated/1.1.126/win32');
+const Quaternion = require('quaternion')
 const {GLSL} = essentials;
 
 Object.assign(global, nvk);
 
 let vertices = new Float32Array([
-   0.0, -0.5,
-   0.5,  0.5,
-  -0.5,  0.5 
+    // Front face
+  -0.5, -0.5,  0.5,
+  0.5, -0.5,  0.5,
+  0.5,  0.5,  0.5,
+ -0.5,  0.5,  0.5,
+ // Back face
+ -0.5, -0.5, -0.5,
+ -0.5,  0.5, -0.5,
+  0.5,  0.5, -0.5,
+  0.5, -0.5, -0.5,
+ // Top face
+ -0.5,  0.5, -0.5,
+ -0.5,  0.5,  0.5,
+  0.5,  0.5,  0.5,
+  0.5,  0.5, -0.5,
+ // Bottom face
+ -0.5, -0.5, -0.5,
+  0.5, -0.5, -0.5,
+  0.5, -0.5,  0.5,
+ -0.5, -0.5,  0.5,
+ // Right face
+  0.5, -0.5, -0.5,
+  0.5,  0.5, -0.5,
+  0.5,  0.5,  0.5,
+  0.5, -0.5,  0.5,
+ // Left face
+ -0.5, -0.5, -0.5,
+ -0.5, -0.5,  0.5,
+ -0.5,  0.5,  0.5,
+ -0.5,  0.5, -0.5
+   
 ]);
 let vertexBuffer = new VkBuffer();
 let vertexBufferMemory = new VkDeviceMemory();
 
 let posVertexBindingDescr = new VkVertexInputBindingDescription();
 posVertexBindingDescr.binding = 0;
-posVertexBindingDescr.stride = 2 * vertices.BYTES_PER_ELEMENT;
+posVertexBindingDescr.stride = 3 * vertices.BYTES_PER_ELEMENT;
 posVertexBindingDescr.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 let posVertexAttrDescr = new VkVertexInputAttributeDescription();
@@ -308,7 +337,7 @@ vertexInputInfo.pVertexAttributeDescriptions = [posVertexAttrDescr];
 
 let inputAssemblyStateInfo = new VkPipelineInputAssemblyStateCreateInfo();
 inputAssemblyStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-inputAssemblyStateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+inputAssemblyStateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 inputAssemblyStateInfo.primitiveRestartEnable = false;
 
 let viewport = new VkViewport();
@@ -333,17 +362,16 @@ viewportStateInfo.scissorCount = 1;
 viewportStateInfo.pScissors = [scissor];
 
 let rasterizationInfo = new VkPipelineRasterizationStateCreateInfo();
-rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 rasterizationInfo.depthClampEnable = false;
-rasterizationInfo.rasterizerDiscardEnable = false;
-rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
-rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-rasterizationInfo.depthBiasEnable = false;
-rasterizationInfo.depthBiasConstantFactor = 0.0;
-rasterizationInfo.depthBiasClamp = 0.0;
-rasterizationInfo.depthBiasSlopeFactor = 0.0;
-rasterizationInfo.lineWidth = 1.0;
+  rasterizationInfo.rasterizerDiscardEnable = false;
+  rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
+  rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+  rasterizationInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  rasterizationInfo.depthBiasEnable = false;
+  rasterizationInfo.depthBiasConstantFactor = 0.0;
+  rasterizationInfo.depthBiasClamp = 0.0;
+  rasterizationInfo.depthBiasSlopeFactor = 0.0;
+  rasterizationInfo.lineWidth = 1.0;
 
 let multisampleInfo = new VkPipelineMultisampleStateCreateInfo();
 multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -520,7 +548,7 @@ function updateCmdBuffer(){
 
     vkCmdBindVertexBuffers(cmdBuffer, 0, 1, [vertexBuffer], new BigUint64Array([0n]));
 
-    vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
+    vkCmdDraw(cmdBuffer, 36, 1, 0,0);
 
     vkCmdEndRenderPass(cmdBuffer);
 
@@ -555,6 +583,58 @@ function translate2D(offsets){
   vertices[4]=vertices[4]+(direction*offsets[0]);
 }
 
+const convert1D_3D = (array1D)=>{
+
+  const array3D=[]
+  it=0;
+  for(let i=0 ;i<6;i++){
+    array3D.push([]);
+    for(let j=0;j<4;j++){
+      array3D[i].push([])
+      for(let k=0;k<3;k++){
+        array3D[i][j].push(array1D[it++]);
+      }
+    }
+  }
+  return array3D;
+}
+
+const convert3D_1D = (array3D)=>{
+
+  const array1D=[]
+  for(let i=0 ;i<6;i++){
+    for(let j=0;j<4;j++){
+      for(let k=0;k<3;k++){
+        array1D.push(array3D[i][j][k]);
+      }
+    }
+  }
+  return array1D;
+}
+
+const rotateWithDeg=(deg)=>{
+  const array3D = convert1D_3D(vertices);
+  for(let i=0 ;i<6;i++){
+    for(let j=0;j<4;j++){
+      for(let k=0;k<3;k++){
+        if(k!==1){
+          let pos = array3D[i][j][k]+(deg/360);
+        if(pos>1){
+          pos = - (pos-1);
+        }else{
+          if(pos<-1){
+            pos = (pos+1);
+          }
+        }
+        array3D[i][j][k] = pos ;
+        }
+      }
+    }
+  }
+  console.log(array3D)
+  vertices = new Float32Array(convert3D_1D(array3D));
+  
+}
 function drawFrame() {
 
   let imageIndex = { $: 0 };
@@ -588,15 +668,16 @@ function drawFrame() {
 
   result = vkQueuePresentKHR(queue, presentInfo);
   ASSERT_VK_RESULT(result);
-  translate2D(new Float32Array([0.008,0.01]))
+  //translate2D(new Float32Array([0.008,0.01]))
   createVertexBuffer(vertexBuffer,vertexBufferMemory,vertices.byteLength)
   updateCmdBuffer()
+  rotateWithDeg(90)
   
 };
 
 console.log("drawing..");
 (function drawLoop() {
-  if (!win.shouldClose()) setTimeout(drawLoop);
+  if (!win.shouldClose()) setTimeout(drawLoop,1000);
   drawFrame();
   win.pollEvents();
 })();
