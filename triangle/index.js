@@ -2,8 +2,6 @@ const { time } = require('console');
 const fs = require('fs');
 const nvk = require('nvk');
 const essentials = require('nvk-essentials');
-const { VK_VIEWPORT_COORDINATE_SWIZZLE_NEGATIVE_W_NV } = require('nvk/generated/1.1.126/linux');
-const { vkCmdUpdateBuffer } = require('nvk/generated/1.1.126/win32');
 
 const {GLSL} = essentials;
 
